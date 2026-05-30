@@ -34,10 +34,13 @@ init_db()
 
 app = FastAPI(title="Jansathi AI Backend", version="1.0.0")
 
-# Enable CORS for frontend development
+# CORS — frontend URLs allowed
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Open for development
+    allow_origins=[
+        "http://localhost:5173",
+        "https://jansunwai-ai-portal-ia8d05e4o-vinaydhiman289-2712s-projects.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -101,17 +104,7 @@ class ComplaintDetailResponse(BaseModel):
 # API Endpoints
 @app.post("/api/complaints", response_model=ComplaintResponse)
 def create_complaint_endpoint(data: ComplaintCreate, db: Session = Depends(get_db)):
-    """
-    Submits a new citizen grievance.
-    1. Generates Ticket ID.
-    2. Runs AI Agent to Classify (Category, Dept, Priority, Summary, Sentiment).
-    3. Saves record.
-    4. Logs ingestion.
-    5. Routes automatically (creates 'Assigned' log).
-    """
     ticket_id = generate_ticket_id()
-    
-    # Run AI Classification Agent
     ai_results = classify_complaint(data.title, data.description, data.image_data)
     
     now = datetime.utcnow()
@@ -136,7 +129,6 @@ def create_complaint_endpoint(data: ComplaintCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(new_complaint)
     
-    # Log Submission history
     details = {"id": ticket_id, "department": new_complaint.department}
     msg_en, msg_hi = generate_vernacular_messages("Submitted", details)
     
@@ -151,7 +143,6 @@ def create_complaint_endpoint(data: ComplaintCreate, db: Session = Depends(get_d
     db.add(submit_log)
     db.commit()
     
-    # Auto-Route (Changes state to Assigned immediately for demo purposes)
     new_complaint.status = "Assigned"
     db.commit()
     
@@ -174,7 +165,6 @@ def get_complaints(
     department: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """List complaints with filters for admin dashboard search."""
     query = db.query(Complaint)
     
     if search:
@@ -197,7 +187,6 @@ def get_complaints(
 
 @app.get("/api/complaints/{complaint_id}", response_model=ComplaintDetailResponse)
 def get_complaint_details(complaint_id: str, db: Session = Depends(get_db)):
-    """Retrieve full details of a single ticket along with its history log."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -210,7 +199,6 @@ def get_complaint_details(complaint_id: str, db: Session = Depends(get_db)):
 
 @app.post("/api/complaints/{complaint_id}/status", response_model=ComplaintResponse)
 def update_complaint_status(complaint_id: str, data: StatusUpdate, db: Session = Depends(get_db)):
-    """Allows admins to move complaints to 'In Progress' or 'Resolved' states manually."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -228,7 +216,6 @@ def update_complaint_status(complaint_id: str, data: StatusUpdate, db: Session =
         "action": data.action_taken or "Administrative status update"
     }
     
-    # Generate messages in vernacular
     msg_en, msg_hi = generate_vernacular_messages(data.status, details)
     
     log = StatusLog(
@@ -248,19 +235,12 @@ def update_complaint_status(complaint_id: str, data: StatusUpdate, db: Session =
 
 @app.post("/api/simulate-tick")
 def simulate_timeline_tick(db: Session = Depends(get_db)):
-    """
-    Cron simulation helper:
-    1. Ages all non-resolved complaints by 2 days.
-    2. Runs follow-up agent to check and trigger auto-escalations.
-    """
     complaints = db.query(Complaint).filter(Complaint.status != "Resolved").all()
     for comp in complaints:
-        # Subtract 2 days from creation to simulate time lapse
         comp.created_at = comp.created_at - timedelta(days=2)
         
     db.commit()
     
-    # Trigger autonomous escalator checks
     escalated_ids = check_and_escalate_complaints(db)
     
     return {
@@ -271,7 +251,6 @@ def simulate_timeline_tick(db: Session = Depends(get_db)):
 
 @app.get("/api/stats")
 def get_dashboard_statistics(department: Optional[str] = None, db: Session = Depends(get_db)):
-    """Computes stats and chart data for the Admin Dashboard."""
     query = db.query(Complaint)
     if department:
         query = query.filter(Complaint.department == department)
@@ -281,7 +260,6 @@ def get_dashboard_statistics(department: Optional[str] = None, db: Session = Dep
     resolved = query.filter(Complaint.status == "Resolved").count()
     escalated = query.filter(Complaint.status == "Escalated").count()
     
-    # Category distribution
     categories = ["Sanitation", "Water Supply", "Electricity", "Roads", "Health", "Public Safety", "Other"]
     cat_counts = {}
     for c in categories:
@@ -290,7 +268,6 @@ def get_dashboard_statistics(department: Optional[str] = None, db: Session = Dep
             cat_query = cat_query.filter(Complaint.department == department)
         cat_counts[c] = cat_query.count()
         
-    # Priority counts
     priorities = ["High", "Medium", "Low"]
     prio_counts = {}
     for p in priorities:
@@ -299,8 +276,6 @@ def get_dashboard_statistics(department: Optional[str] = None, db: Session = Dep
             prio_query = prio_query.filter(Complaint.department == department)
         prio_counts[p] = prio_query.count()
         
-    # Average resolution time estimate
-    # Simple simulation calculation: average difference of resolved complaints
     res_query = db.query(Complaint).filter(Complaint.status == "Resolved")
     if department:
         res_query = res_query.filter(Complaint.department == department)
@@ -313,9 +288,8 @@ def get_dashboard_statistics(department: Optional[str] = None, db: Session = Dep
             durations.append(diff.total_seconds() / 3600.0)
         avg_hours = sum(durations) / len(durations)
     else:
-        avg_hours = 36.5 # Demo placeholder average
-        
-    # Status-wise exact counts
+        avg_hours = 36.5
+
     statuses = ["Submitted", "Assigned", "In Progress", "Escalated", "Resolved"]
     status_counts = {}
     for s in statuses:
@@ -337,7 +311,6 @@ def get_dashboard_statistics(department: Optional[str] = None, db: Session = Dep
 
 @app.get("/api/trends")
 def get_complaint_trends(days: int = 14, db: Session = Depends(get_db)):
-    """Returns daily filed vs resolved complaint counts for the last N days."""
     from sqlalchemy import func
 
     today = datetime.utcnow().date()
