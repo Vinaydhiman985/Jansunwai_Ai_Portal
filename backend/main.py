@@ -18,10 +18,10 @@ for stream in (sys.stdout, sys.stderr):
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     masked_key = api_key[:7] + "..." + api_key[-4:] if len(api_key) > 10 else "..."
-    print(f"\n[OK] [Jansathi AI Engine] Loaded GEMINI_API_KEY ({masked_key}) successfully.")
-    print("[OK] [Jansathi AI Engine] Multimodal Classifier fully active!\n")
+    print(f"\n[OK] [Jansunwai AI Engine] Loaded GEMINI_API_KEY ({masked_key}) successfully.")
+    print("[OK] [Jansunwai AI Engine] Multimodal Classifier fully active!\n")
 else:
-    print("\n[WARN] [Jansathi AI Engine] GEMINI_API_KEY not found in .env! Local rule heuristics loaded.\n")
+    print("\n[WARN] [Jansunwai AI Engine] GEMINI_API_KEY not found in .env! Local rule heuristics loaded.\n")
 
 from database import engine, SessionLocal, init_db, Complaint, StatusLog
 from agents.classifier import classify_complaint
@@ -32,7 +32,8 @@ from agents.escalator import check_and_escalate_complaints
 # Initialize Database tables and seeds
 init_db()
 
-app = FastAPI(title="Jansathi AI Backend", version="1.0.0")
+# Line 2 pe
+app = FastAPI(title="Jansunwai AI Portal", version="1.0.0")
 
 # CORS — frontend URLs allowed
 app.add_middleware(

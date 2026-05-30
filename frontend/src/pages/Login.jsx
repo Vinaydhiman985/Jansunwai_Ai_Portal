@@ -77,7 +77,7 @@ export default function Login({ onLogin }) {
           </div>
           <div>
             <span className="text-base font-black tracking-tight text-gov-primary flex items-center">
-              Jansathi AI
+              Jansunwai AI
               <span className="ml-1.5 px-2 py-0.5 bg-gov-secondary/15 rounded-full text-[9px] font-black text-gov-secondary flex items-center border border-gov-secondary/20">
                 <Cpu className="w-2.5 h-2.5 mr-0.5 animate-pulse" />
                 UP-GRID V2
@@ -275,7 +275,7 @@ export default function Login({ onLogin }) {
 
           {/* Footer note */}
           <p className="text-center text-[11px] text-slate-400 mt-5 font-medium">
-            Uttar Pradesh Government · Grievance Redressal System · Powered by Jansathi AI
+            Uttar Pradesh Government · Grievance Redressal System · Powered by Jansunwai AI
           </p>
         </div>
       </main>

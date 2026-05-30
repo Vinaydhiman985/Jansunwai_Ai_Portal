@@ -108,7 +108,7 @@ export default function App() {
             </div>
             <div>
               <span className="text-base font-black tracking-tight text-gov-primary flex items-center">
-                Jansathi AI
+                Jansunwai AI
                 <span className="ml-1.5 px-2 py-0.5 bg-gov-secondary/15 rounded-full text-[9px] font-black text-gov-secondary flex items-center border border-gov-secondary/20">
                   <Cpu className="w-2.5 h-2.5 mr-0.5 animate-pulse" />
                   UP-GRID V2
@@ -221,7 +221,7 @@ export default function App() {
             <span>Government of Uttar Pradesh Grievance Ingestion Service</span>
           </div>
           <p className="text-[10px] text-slate-400 max-w-md mx-auto">
-            Powered by Jansathi AI Agent network. Built for Smart Governance. Auto-escalation checks active.
+            Powered by Jansunwai AI Agent network. Built for Smart Governance. Auto-escalation checks active.
           </p>
         </div>
       </footer>
